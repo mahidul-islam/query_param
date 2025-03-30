@@ -36,6 +36,7 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
   Map<String, String> queryParams = {};
   final GlobalKey _widgetKey = GlobalKey();
   bool isSharing = false;
+  Uint8List? capturedImage;
 
   @override
   void initState() {
@@ -64,11 +65,38 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
       isSharing = true;
     });
 
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // Find the RenderRepaintBoundary
+      RenderRepaintBoundary boundary =
+          _widgetKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
 
-    setState(() {
-      isSharing = false;
-    });
+      // Capture the image with good quality
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+
+      // Convert to byte data in PNG format
+      ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+
+      if (byteData != null) {
+        // Convert to Uint8List which can be used with Image.memory
+        final bytes = byteData.buffer.asUint8List();
+
+        setState(() {
+          // Store the captured image in the class property
+          capturedImage = bytes;
+        });
+
+        print('Image captured successfully! ${bytes.length} bytes');
+      }
+    } catch (e) {
+      print('Error capturing image: $e');
+    } finally {
+      setState(() {
+        isSharing = false;
+      });
+    }
   }
 
   @override
@@ -189,6 +217,30 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
                       : const Icon(Icons.share),
               label: Text(isSharing ? 'Sharing...' : 'Share Parameters'),
             ),
+            SizedBox(height: 20),
+            // Add this to your build method after your existing UI
+            if (capturedImage != null)
+              Container(
+                margin: const EdgeInsets.only(top: 20),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Captured Image Preview',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    Image.memory(
+                      capturedImage!,
+                      width: 300, // You can adjust the size
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

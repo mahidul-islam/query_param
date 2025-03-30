@@ -305,18 +305,23 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
                     backgroundColor: Colors.blueAccent,
                     foregroundColor: Colors.white,
                   ),
-                  icon:
-                      isCapturing
-                          ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                          : const Icon(Icons.share),
+                  icon: const Icon(Icons.share),
                   label: Text('Share Image'),
+                ),
+
+                SizedBox(width: 20),
+                ElevatedButton.icon(
+                  onPressed: _downloadImage,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.download),
+                  label: Text('Download Image'),
                 ),
               ],
             ),

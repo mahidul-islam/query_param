@@ -1,9 +1,14 @@
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import 'dart:convert';
+import 'package:share_plus/share_plus.dart';
+import 'dart:html' as html;
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(const MainApp());
@@ -35,7 +40,7 @@ class QueryParamHandler extends StatefulWidget {
 class _QueryParamHandlerState extends State<QueryParamHandler> {
   Map<String, String> queryParams = {};
   final GlobalKey _widgetKey = GlobalKey();
-  bool isSharing = false;
+  bool isCapturing = false;
   Uint8List? capturedImage;
 
   @override
@@ -62,7 +67,7 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
 
   Future<void> _captureAndShare() async {
     setState(() {
-      isSharing = true;
+      isCapturing = true;
     });
 
     try {
@@ -94,9 +99,79 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
       print('Error capturing image: $e');
     } finally {
       setState(() {
-        isSharing = false;
+        isCapturing = false;
       });
     }
+  }
+
+  Future<void> shareImage() async {
+    if (capturedImage == null) {
+      print('No image to share');
+      return;
+    }
+
+    try {
+      // For web platform specifically
+      if (kIsWeb) {
+        // Convert image bytes to blob
+        final blob = html.Blob([capturedImage!], 'image/png');
+
+        // Create a URL for the blob
+        final url = html.Url.createObjectUrl(blob);
+
+        // Create a temp file for sharing
+        final xFile = XFile.fromData(
+          capturedImage!,
+          name: 'parameters.png',
+          mimeType: 'image/png',
+        );
+
+        // Share options
+        final shareResult = await Share.shareXFiles(
+          [xFile],
+          text: 'Check out these parameters I captured!',
+          subject: 'Shared Parameters',
+        );
+
+        // Revoke the object URL to free memory
+        html.Url.revokeObjectUrl(url);
+
+        // Log the result
+        print('Share result: ${shareResult.status}');
+      } else {
+        // For non-web platforms (if you need this in the future)
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/parameters.png');
+        await file.writeAsBytes(capturedImage!);
+
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: 'Check out these parameters I captured!',
+          subject: 'Shared Parameters',
+        );
+      }
+    } catch (e) {
+      print('Error sharing image: $e');
+
+      // Fallback for browsers that don't support Web Share API
+      _downloadImage();
+    }
+  }
+
+  // Helper method for browsers without Web Share API support
+  void _downloadImage() {
+    // Convert image to data URL
+    final base64 = base64Encode(capturedImage!);
+    final dataUrl = 'data:image/png;base64,$base64';
+
+    // Create a download link
+    final anchor =
+        html.AnchorElement(href: dataUrl)
+          ..setAttribute(
+            "download",
+            "parameters-${DateTime.now().millisecondsSinceEpoch}.png",
+          )
+          ..click();
   }
 
   @override
@@ -194,28 +269,57 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
               ),
             ),
             const SizedBox(height: 30),
-            ElevatedButton.icon(
-              onPressed: isSharing ? null : _captureAndShare,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: isCapturing ? null : _captureAndShare,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon:
+                      isCapturing
+                          ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                          : const Icon(Icons.save),
+                  label: Text(isCapturing ? 'Saving...' : 'Capture Image'),
                 ),
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
-              ),
-              icon:
-                  isSharing
-                      ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                      : const Icon(Icons.share),
-              label: Text(isSharing ? 'Sharing...' : 'Share Parameters'),
+                SizedBox(width: 20),
+                ElevatedButton.icon(
+                  onPressed: shareImage,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon:
+                      isCapturing
+                          ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                          : const Icon(Icons.share),
+                  label: Text('Share Image'),
+                ),
+              ],
             ),
             SizedBox(height: 20),
             // Add this to your build method after your existing UI

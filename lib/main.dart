@@ -59,7 +59,7 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
 
     // You can also handle specific parameters
     if (queryParams.containsKey('key')) {
-      print('Key parameter: ${queryParams['key']}');
+      debugPrint('Key parameter: ${queryParams['key']}');
       // Process the value as needed
     }
   }
@@ -92,10 +92,10 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
           capturedImage = bytes;
         });
 
-        print('Image captured successfully! ${bytes.length} bytes');
+        debugPrint('Image captured successfully! ${bytes.length} bytes');
       }
     } catch (e) {
-      print('Error capturing image: $e');
+      debugPrint('Error capturing image: $e');
     } finally {
       setState(() {
         isCapturing = false;
@@ -105,7 +105,7 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
 
   Future<void> shareImage() async {
     if (capturedImage == null) {
-      print('No image to share');
+      debugPrint('No image to share');
       return;
     }
 
@@ -136,7 +136,7 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
         html.Url.revokeObjectUrl(url);
 
         // Log the result
-        print('Share result: ${shareResult.status}');
+        debugPrint('Share result: ${shareResult.status}');
       } else {
         // For non-web platforms (if you need this in the future)
         final tempDir = await getTemporaryDirectory();
@@ -150,7 +150,7 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
         );
       }
     } catch (e) {
-      print('Error sharing image: $e');
+      debugPrint('Error sharing image: $e');
 
       // Fallback for browsers that don't support Web Share API
       _downloadImage();
@@ -164,6 +164,7 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
     final dataUrl = 'data:image/png;base64,$base64';
 
     // Create a download link
+    // ignore: unused_local_variable
     final anchor =
         html.AnchorElement(href: dataUrl)
           ..setAttribute(
@@ -200,7 +201,7 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withAlpha(23),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -236,7 +237,7 @@ class _QueryParamHandlerState extends State<QueryParamHandler> {
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withAlpha(22),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(

@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import 'dart:convert';
 import 'package:share_plus/share_plus.dart';
+// ignore: deprecated_member_use, avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'package:path_provider/path_provider.dart';
 
